@@ -3,12 +3,14 @@ import assert from 'node:assert/strict';
 import {
   DEFAULT_TIME_SLOTS,
   filterDesignsByCategory,
+  formatToman,
   getSlotAvailability,
   isValidMobileNumber,
   normalizeIranMobile,
   validateReservationPayload,
 } from './bookingLogic';
 import { SiteDesignItem } from '../types';
+import { getDesignTitle } from '../i18n/translations';
 
 const mockDesigns: SiteDesignItem[] = [
   {
@@ -16,6 +18,10 @@ const mockDesigns: SiteDesignItem[] = [
     code: 'TA-101',
     titleFa: 'فرنچ مرواریدی سرخابی',
     titleTr: 'İnci Ahududu French',
+    titleEn: 'Pearl Raspberry French',
+    title_fa: 'فرنچ مرواریدی سرخابی',
+    title_tr: 'İnci Ahududu French',
+    title_en: 'Pearl Raspberry French',
     category: 'french',
     priceToman: 680000,
     priceTl: 850,
@@ -31,6 +37,10 @@ const mockDesigns: SiteDesignItem[] = [
     code: 'TA-102',
     titleFa: 'آمبره ارغوانی',
     titleTr: 'Mürdüm Ombre',
+    titleEn: 'Mulberry Ombre',
+    title_fa: 'آمبره ارغوانی',
+    title_tr: 'Mürdüm Ombre',
+    title_en: 'Mulberry Ombre',
     category: 'ombre',
     priceToman: 790000,
     priceTl: 950,
@@ -48,6 +58,15 @@ test('filterDesignsByCategory filters correctly and returns all for "all"', () =
   assert.equal(filterDesignsByCategory(mockDesigns, 'french').length, 1);
   assert.equal(filterDesignsByCategory(mockDesigns, 'french')[0].code, 'TA-101');
   assert.equal(filterDesignsByCategory(mockDesigns, 'pedicure').length, 0);
+});
+
+test('getDesignTitle and formatToman support Persian (fa), Turkish (tr), and English (en)', () => {
+  assert.equal(getDesignTitle(mockDesigns[0], 'fa'), 'فرنچ مرواریدی سرخابی');
+  assert.equal(getDesignTitle(mockDesigns[0], 'tr'), 'İnci Ahududu French');
+  assert.equal(getDesignTitle(mockDesigns[0], 'en'), 'Pearl Raspberry French');
+  assert.ok(formatToman(680000, 'fa').includes('تومان'));
+  assert.ok(formatToman(680000, 'tr').includes('Toman'));
+  assert.equal(formatToman(680000, 'en'), '680,000 Toman');
 });
 
 test('normalizeIranMobile and isValidMobileNumber validate Iranian phone formats', () => {

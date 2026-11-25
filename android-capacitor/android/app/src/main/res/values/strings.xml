@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Tırnak Atölyesi</string>
+    <string name="title_activity_main">Tırnak Atölyesi — رزرو نوبت و تست هوشمند ناخن</string>
+    <string name="package_name">ir.tirnakatolyesi.app</string>
+    <string name="custom_url_scheme">ir.tirnakatolyesi.app</string>
+</resources>

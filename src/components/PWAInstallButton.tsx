@@ -72,56 +72,56 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
         onClick={handleInstallClick}
         className={
           variant === 'toolbar'
-            ? 'inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#3B132A] text-[#FFFDFB] text-xs font-medium hover:bg-[#521B3B] transition-colors whitespace-nowrap shrink-0 cursor-pointer'
-            : 'inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#D42663] text-white text-sm font-medium hover:bg-[#B81D53] transition-colors whitespace-nowrap shrink-0 cursor-pointer'
+            ? 'inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#3B132A] text-[#FFFDFB] text-xs font-medium hover:bg-[#521B3B] transition-colors cursor-pointer max-w-full min-w-0 break-words'
+            : 'inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#D42663] text-white text-sm font-medium hover:bg-[#B81D53] transition-colors cursor-pointer max-w-full min-w-0 break-words'
         }
       >
         <Download className="w-4 h-4 shrink-0" />
-        <span>{tr.installAppBtn} (PWA / Android)</span>
+        <span className="break-words">{tr.installAppBtn} (PWA / Android)</span>
       </button>
 
       {showGuideModal && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#3B132A]/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#3B132A]/60 backdrop-blur-xs p-4 text-start overflow-x-hidden"
           role="dialog"
           aria-modal="true"
           aria-label={tr.installAppBtn}
         >
-          <div className="w-full max-w-md rounded-2xl bg-[#FFFDFB] border border-[#3B132A]/15 p-6 shadow-xl text-[#3B132A]">
-            <div className="flex items-center justify-between pb-4 border-b border-[#3B132A]/10">
-              <div className="flex items-center gap-3">
+          <div className="w-[calc(100vw-2rem)] max-w-lg mx-auto max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-2xl bg-[#FFFDFB] border border-[#3B132A]/15 p-5 sm:p-6 shadow-xl text-[#3B132A] min-w-0">
+            <div className="flex items-center justify-between gap-3 pb-4 border-b border-[#3B132A]/10 min-w-0">
+              <div className="flex items-center gap-3 min-w-0">
                 <img
                   src="/assets/logo.png"
                   alt="Tırnak Atölyesi Logo"
-                  className="w-10 h-10 rounded-lg object-contain bg-[#FAF0E6] p-1 border border-[#3B132A]/10"
+                  className="w-10 h-10 rounded-lg object-contain bg-[#FAF0E6] p-1 border border-[#3B132A]/10 shrink-0"
                   referrerPolicy="no-referrer"
                 />
-                <div>
-                  <h3 className="text-base font-bold text-[#3B132A]">
-                    {lang === 'fa'
-                      ? 'نصب اپلیکیشن Tırnak Atölyesi'
-                      : 'Tırnak Atölyesi Uygulamasını Yükle'}
+                <div className="min-w-0">
+                  <h3 className="text-base font-bold text-[#3B132A] break-words">
+                    {tr.installAppBtn} — Tırnak Atölyesi
                   </h3>
-                  <p className="text-xs text-[#3B132A]/70">tirnakatolyesi.ir • PWA & Android</p>
+                  <p className="text-xs text-[#3B132A]/70 break-words">
+                    tirnakatolyesi.ir • PWA & Android
+                  </p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowGuideModal(false)}
-                aria-label="بستن راهنمای نصب"
-                className="p-2 rounded-lg text-[#3B132A]/70 hover:bg-[#FAF0E6] transition-colors cursor-pointer"
+                aria-label="Close"
+                className="p-2 rounded-lg text-[#3B132A]/70 hover:bg-[#FAF0E6] transition-colors cursor-pointer shrink-0"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="mt-4 space-y-3 text-sm leading-relaxed text-[#3B132A]/85">
+            <div className="mt-4 space-y-3 text-sm leading-relaxed text-[#3B132A]/85 min-w-0">
               {lang === 'fa' ? (
                 <>
-                  <p className="font-medium text-[#3B132A]">
+                  <p className="font-medium text-[#3B132A] break-words">
                     اپلیکیشن وب پیش‌رونده (PWA) و نسخه اندروید آتلیه ناخن آماده نصب روی گوشی شماست:
                   </p>
-                  <div className="rounded-xl bg-[#FAF0E6] p-3.5 space-y-2 text-xs">
+                  <div className="rounded-xl bg-[#FAF0E6] p-3.5 space-y-2 text-xs break-words">
                     <p>
                       <strong>۱. در اندروید (Chrome):</strong> روی منوی سه‌نقطه مرورگر بزنید و گزینه{' '}
                       <span className="font-bold text-[#D42663]">Install App / افزودن به صفحه اصلی</span>{' '}
@@ -134,16 +134,16 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
                     </p>
                     <p>
                       <strong>۳. کافه بازار و گوگل پلی:</strong> پکیج رسمی اندروید (
-                      <code className="font-mono">ir.tirnakatolyesi.app</code>) با آیکون رسمی برند آماده انتشار است.
+                      <code className="font-mono break-all">ir.tirnakatolyesi.app</code>) با آیکون رسمی برند آماده انتشار است.
                     </p>
                   </div>
                 </>
-              ) : (
+              ) : lang === 'tr' ? (
                 <>
-                  <p className="font-medium text-[#3B132A]">
+                  <p className="font-medium text-[#3B132A] break-words">
                     Tırnak Atölyesi mobil uygulamasını ana ekranınıza hemen ekleyebilirsiniz:
                   </p>
-                  <div className="rounded-xl bg-[#FAF0E6] p-3.5 space-y-2 text-xs">
+                  <div className="rounded-xl bg-[#FAF0E6] p-3.5 space-y-2 text-xs break-words">
                     <p>
                       <strong>1. Android (Chrome):</strong> Tarayıcı menüsünden{' '}
                       <span className="font-bold text-[#D42663]">Uygulamayı Yükle / Ana Ekrana Ekle</span>{' '}
@@ -156,17 +156,34 @@ export const PWAInstallButton: React.FC<PWAInstallButtonProps> = ({
                     </p>
                   </div>
                 </>
+              ) : (
+                <>
+                  <p className="font-medium text-[#3B132A] break-words">
+                    Install the Tırnak Atölyesi Progressive Web App or Android app on your device:
+                  </p>
+                  <div className="rounded-xl bg-[#FAF0E6] p-3.5 space-y-2 text-xs break-words">
+                    <p>
+                      <strong>1. Android (Chrome):</strong> Tap the browser menu and select{' '}
+                      <span className="font-bold text-[#D42663]">Install App / Add to Home Screen</span>.
+                    </p>
+                    <p>
+                      <strong>2. iOS (Safari):</strong> Tap the{' '}
+                      <span className="font-bold text-[#D42663]">Share</span> button at the bottom and choose{' '}
+                      <span className="font-bold text-[#D42663]">Add to Home Screen</span>.
+                    </p>
+                  </div>
+                </>
               )}
             </div>
 
-            <div className="mt-5 flex justify-end">
+            <div className="mt-5 flex justify-end w-full max-w-full min-w-0">
               <button
                 type="button"
                 onClick={() => setShowGuideModal(false)}
-                className="w-full py-2.5 px-4 rounded-xl bg-[#3B132A] text-white text-sm font-medium hover:bg-[#521B3B] transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                className="w-full max-w-full min-w-0 py-2.5 px-4 rounded-xl bg-[#3B132A] text-white text-sm font-medium hover:bg-[#521B3B] transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
-                <Smartphone className="w-4 h-4" />
-                <span>{lang === 'fa' ? 'متوجه شدم' : 'Anladım'}</span>
+                <Smartphone className="w-4 h-4 shrink-0" />
+                <span>{lang === 'fa' ? 'متوجه شدم' : lang === 'tr' ? 'Anladım' : 'Got It'}</span>
               </button>
             </div>
           </div>

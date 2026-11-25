@@ -79,6 +79,7 @@ try {
                 'recommendedColorHex' => '#D42663',
                 'analysisFa' => 'بر اساس فرم انگشتان و تناژ گرم پوست دست شما، فرم «بادامی (Almond)» با تم رنگی «سرخابی تمشکی (#D42663)» و ورق طلا بیشترین کشیدگی و ظرافت را ایجاد می‌کند.',
                 'analysisTr' => 'Parmak yapınız ve sıcak cilt alt tonunuza göre Badem (Almond) tırnak formu ve Ahududu Macenta (#D42663) tonu en zarif görünümü sağlar.',
+                'analysisEn' => 'Based on your finger proportions and warm skin undertone, the Almond nail shape with Raspberry Magenta (#D42663) creates the most elegant look.',
                 'engine' => 'studio-heuristic-fallback',
             ], JSON_UNESCAPED_UNICODE);
             exit;
@@ -96,7 +97,8 @@ try {
             . "Return a JSON object with keys: recommendedShape (one of: almond, coffin, square, round), "
             . "recommendedColorHex (one of: #D42663, #F3769B, #7B2869, #3B132A, #F7AD93, #E5A93B), "
             . "analysisFa (1 concise sentence in Persian advising the best nail shape and color for their hand), "
-            . "analysisTr (1 concise sentence in Turkish).";
+            . "analysisTr (1 concise sentence in Turkish), "
+            . "analysisEn (1 concise sentence in English).";
 
         $payload = [
             'contents' => [[
@@ -137,6 +139,7 @@ try {
             'recommendedColorHex' => '#D42663',
             'analysisFa' => 'فرم بادامی (Almond) با تم سرخابی (#D42663) و هایلایت طلایی برای فرم دست شما ایده‌آل است.',
             'analysisTr' => 'Badem tırnak formu ve Ahududu Macenta (#D42663) el yapınız için idealdir.',
+            'analysisEn' => 'Almond nail shape with Raspberry Magenta (#D42663) is ideal for your hand proportions.',
             'engine' => 'fallback',
         ], JSON_UNESCAPED_UNICODE);
         exit;
@@ -260,6 +263,59 @@ try {
                 'status' => 'pending',
                 'publishedToCustomerGallery' => false,
             ]),
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // 5. Admin: Create Trilingual Site Gallery Item (title_fa, title_tr, title_en)
+    if ($uri === '/api/site-gallery' && $method === 'POST') {
+        $urlPrefix = $config['uploads_url_prefix'] ?? '/php-backend/uploads';
+        $titleFa = trim((string)($body['titleFa'] ?? $body['title_fa'] ?? ''));
+        $titleTr = trim((string)($body['titleTr'] ?? $body['title_tr'] ?? $titleFa));
+        $titleEn = trim((string)($body['titleEn'] ?? $body['title_en'] ?? $titleTr));
+        $code = trim((string)($body['code'] ?? ('TA-' . random_int(110, 999))));
+        $imageUrl = saveBase64ImageToUploads($body['imageUrl'] ?? null, 'site_design', $uploadsDir, $urlPrefix);
+
+        $stmt = $pdo->prepare('
+            INSERT INTO site_gallery (
+                code, title_fa, title_tr, title_en, category,
+                price_toman, duration_min, image_url, primary_color_hex, default_shape
+            ) VALUES (
+                :code, :title_fa, :title_tr, :title_en, :category,
+                :price_toman, :duration_min, :image_url, :primary_color_hex, :default_shape
+            )
+        ');
+        $stmt->execute([
+            'code' => $code,
+            'title_fa' => $titleFa,
+            'title_tr' => $titleTr,
+            'title_en' => $titleEn,
+            'category' => $body['category'] ?? 'gelish',
+            'price_toman' => (int)($body['priceToman'] ?? 750000),
+            'duration_min' => (int)($body['durationMin'] ?? 60),
+            'image_url' => $imageUrl,
+            'primary_color_hex' => $body['primaryColorHex'] ?? '#D42663',
+            'default_shape' => $body['defaultShape'] ?? 'almond',
+        ]);
+
+        echo json_encode([
+            'design' => [
+                'id' => (string)$pdo->lastInsertId(),
+                'code' => $code,
+                'titleFa' => $titleFa,
+                'titleTr' => $titleTr,
+                'titleEn' => $titleEn,
+                'title_fa' => $titleFa,
+                'title_tr' => $titleTr,
+                'title_en' => $titleEn,
+                'category' => $body['category'] ?? 'gelish',
+                'priceToman' => (int)($body['priceToman'] ?? 750000),
+                'durationMin' => (int)($body['durationMin'] ?? 60),
+                'imageUrl' => $imageUrl,
+                'primaryColorHex' => $body['primaryColorHex'] ?? '#D42663',
+                'secondaryColorHex' => '#FAF0E6',
+                'defaultShape' => $body['defaultShape'] ?? 'almond',
+            ],
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }

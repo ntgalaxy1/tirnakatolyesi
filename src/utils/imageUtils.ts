@@ -2,12 +2,18 @@ import { NailShape } from '../types';
 
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 
-export function validateImageFile(file: File): { valid: boolean; errorFa?: string; errorTr?: string } {
+export function validateImageFile(file: File): {
+  valid: boolean;
+  errorFa?: string;
+  errorTr?: string;
+  errorEn?: string;
+} {
   if (!ALLOWED_MIME_TYPES.includes(file.type)) {
     return {
       valid: false,
       errorFa: 'فرمت تصویر باید JPG، PNG یا WebP باشد.',
       errorTr: 'Görsel formatı JPG, PNG veya WebP olmalıdır.',
+      errorEn: 'Image format must be JPG, PNG, or WebP.',
     };
   }
   if (file.size > 12 * 1024 * 1024) {
@@ -15,6 +21,7 @@ export function validateImageFile(file: File): { valid: boolean; errorFa?: strin
       valid: false,
       errorFa: 'حجم تصویر نباید بیشتر از ۱۲ مگابایت باشد.',
       errorTr: 'Görsel boyutu 12MB değerini aşmamalıdır.',
+      errorEn: 'Image size must not exceed 12MB.',
     };
   }
   return { valid: true };

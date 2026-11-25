@@ -12,11 +12,70 @@
     --brand-gold: #E5A93B;
   }
 
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+    margin: 0;
+    padding: 0;
+  }
+
   body {
-    font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+    font-family: 'Vazirmatn', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     background-color: #FAF0E6;
     color: #3B132A;
-    overflow-x: hidden;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  html[lang="tr"] body,
+  html[lang="en"] body {
+    font-family: 'Plus Jakarta Sans', 'Vazirmatn', system-ui, -apple-system, sans-serif;
+  }
+
+  html[lang="fa"] body {
+    font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+  }
+
+  img,
+  svg,
+  video,
+  canvas {
+    max-width: 100%;
+    height: auto;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  span,
+  a,
+  button,
+  label,
+  li,
+  td,
+  th {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  input,
+  select,
+  textarea {
+    max-width: 100%;
+    min-width: 0;
   }
 }
 
@@ -26,6 +85,10 @@
 
 .font-persian {
   font-family: 'Vazirmatn', system-ui, -apple-system, sans-serif;
+}
+
+.font-latin {
+  font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
 }
 
 /* Custom subtle scrollbars */

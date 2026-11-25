@@ -227,7 +227,7 @@ Strictly preserve the customer's exact hand skin tone, finger positions, backgro
     }
   });
 
-  // 4b. Free-Tier Hand Analysis & Nail Shape/Color Advisor (`gemini-2.5-flash` / `gemini-4-hydrogen` with graceful offline fallback)
+  // 4b. Free-Tier Hand Analysis & Nail Shape/Color Advisor (`gemini-2.5-flash` with graceful offline fallback)
   app.post('/api/ai/analyze-hand', async (req, res) => {
     try {
       const { handImageBase64, designTitle } = req.body || {};
@@ -241,6 +241,8 @@ Strictly preserve the customer's exact hand skin tone, finger positions, backgro
             'بر اساس فرم انگشتان و تناژ پوست دست شما، فرم «بادامی (Almond)» با تم رنگی «سرخابی تمشکی (#D42663)» و ورق طلا بیشترین کشیدگی و ظرافت را روی دست شما ایجاد می‌کند.',
           analysisTr:
             'Parmak yapınız ve cilt alt tonunuza göre Badem (Almond) tırnak formu ve Ahududu Macenta (#D42663) tonu en zarif görünümü sağlar.',
+          analysisEn:
+            'Based on your finger proportions and skin undertone, the Almond nail shape paired with Raspberry Magenta (#D42663) and gold leaf creates the most elongating, elegant look.',
           engine: 'studio-advisor-fallback',
         });
         return;
@@ -261,7 +263,7 @@ Strictly preserve the customer's exact hand skin tone, finger positions, backgro
           parts: [
             { inlineData: { data: rawBase64, mimeType } },
             {
-              text: `Analyze this customer's hand photo for Tırnak Atölyesi nail salon (selected design: ${designTitle || 'French'}). Recommend the ideal nail shape (almond, coffin, square, or round) and brand color hex (#D42663, #F3769B, #7B2869, #3B132A, #F7AD93, or #E5A93B) in 1 concise Persian sentence and 1 Turkish sentence. Return JSON: {"recommendedShape":"almond","recommendedColorHex":"#D42663","analysisFa":"...","analysisTr":"..."}`,
+              text: `Analyze this customer's hand photo for Tırnak Atölyesi nail salon (selected design: ${designTitle || 'French'}). Recommend the ideal nail shape (almond, coffin, square, or round) and brand color hex (#D42663, #F3769B, #7B2869, #3B132A, #F7AD93, or #E5A93B) in 1 concise Persian sentence, 1 Turkish sentence, and 1 English sentence. Return JSON: {"recommendedShape":"almond","recommendedColorHex":"#D42663","analysisFa":"...","analysisTr":"...","analysisEn":"..."}`,
             },
           ],
         },
@@ -278,6 +280,9 @@ Strictly preserve the customer's exact hand skin tone, finger positions, backgro
         analysisTr:
           parsed.analysisTr ||
           'Badem (Almond) tırnak formu ve Ahududu Macenta (#D42663) el yapınız için idealdir.',
+        analysisEn:
+          parsed.analysisEn ||
+          'Almond nail shape with Raspberry Magenta (#D42663) is ideal for your hand proportions.',
         engine: 'gemini-2.5-flash',
       });
     } catch {
@@ -288,6 +293,8 @@ Strictly preserve the customer's exact hand skin tone, finger positions, backgro
           'بر اساس آنالیز فرم دست و تناژ پوست، فرم «بادامی (Almond)» و رنگ «سرخابی تمشکی (#D42663)» پیشنهاد می‌شود.',
         analysisTr:
           'El ve cilt tonu analizine göre Badem (Almond) formu ve Ahududu Macenta (#D42663) önerilir.',
+        analysisEn:
+          'Based on hand and skin tone analysis, Almond shape with Raspberry Magenta (#D42663) is recommended.',
         engine: 'studio-advisor-fallback',
       });
     }
@@ -395,12 +402,14 @@ Strictly preserve the customer's exact hand skin tone, finger positions, backgro
       serviceType: r.serviceType,
       serviceLabelFa: r.selectedDesignTitle || 'طراحی اختصاصی ناخن و تست هوش مصنوعی',
       serviceLabelTr: r.selectedDesignTitle || 'AI Özel Tırnak Tasarımı',
+      serviceLabelEn: r.selectedDesignTitle || 'Bespoke AI Nail Art Design',
       dateFa: r.date.replace(/-/g, '/'),
       dateIso: new Date().toISOString().slice(0, 10),
       imageUrl: imageToPublish,
       designCode: r.selectedDesignCode || 'TA-VIP',
       commentFa: r.notes || 'اجرا شده بر اساس نمونه نهایی تست هوشمند روی دست مشتری در Tırnak Atölyesi',
       commentTr: 'Müşteri elinde AI denemesi ile onaylanan nihai tasarım uygulaması',
+      commentEn: 'Crafted based on the client’s approved virtual hand try-on preview at Tırnak Atölyesi',
       reservationId: r.id,
     };
 
@@ -417,12 +426,16 @@ Strictly preserve the customer's exact hand skin tone, finger positions, backgro
     });
   });
 
-  // 8. Admin: Manage Site Gallery («تصاویر نمونه خود سایت»)
+  // 8. Admin: Manage Site Gallery («تصاویر نمونه خود سایت» / Salon Tasarımları / Official Salon Designs)
   app.post('/api/site-gallery', (req, res) => {
     const {
       code,
       titleFa,
       titleTr,
+      titleEn,
+      title_fa,
+      title_tr,
+      title_en,
       category,
       priceToman,
       durationMin,
@@ -431,7 +444,11 @@ Strictly preserve the customer's exact hand skin tone, finger positions, backgro
       defaultShape,
     } = req.body || {};
 
-    if (!titleFa || !imageUrl) {
+    const cleanFa = String(titleFa || title_fa || '').trim();
+    const cleanTr = String(titleTr || title_tr || cleanFa).trim();
+    const cleanEn = String(titleEn || title_en || cleanTr || cleanFa).trim();
+
+    if (!cleanFa || !imageUrl) {
       res.status(400).json({ error: 'عنوان طرح و تصویر الزامی است.' });
       return;
     }
@@ -439,8 +456,12 @@ Strictly preserve the customer's exact hand skin tone, finger positions, backgro
     const newDesign: SiteDesignItem = {
       id: `design-${Date.now()}`,
       code: code || `TA-${100 + siteDesigns.length + 1}`,
-      titleFa,
-      titleTr: titleTr || titleFa,
+      titleFa: cleanFa,
+      titleTr: cleanTr,
+      titleEn: cleanEn,
+      title_fa: cleanFa,
+      title_tr: cleanTr,
+      title_en: cleanEn,
       category: category || 'gelish',
       priceToman: Number(priceToman) || 750000,
       priceTl: 900,
@@ -449,11 +470,58 @@ Strictly preserve the customer's exact hand skin tone, finger positions, backgro
       primaryColorHex: primaryColorHex || '#D42663',
       secondaryColorHex: '#FAF0E6',
       defaultShape: defaultShape || 'almond',
-      promptDescription: `${titleFa} nail art design`,
+      promptDescription: `${cleanEn} nail art design`,
     };
 
     siteDesigns = [newDesign, ...siteDesigns];
     res.json({ design: newDesign });
+  });
+
+  // 8b. Admin: Update Existing Site Gallery Design (Trilingual Titles & Metadata)
+  app.put('/api/site-gallery/:id', (req, res) => {
+    const { id } = req.params;
+    const idx = siteDesigns.findIndex((d) => d.id === id);
+    if (idx === -1) {
+      res.status(404).json({ error: 'طرح یافت نشد.' });
+      return;
+    }
+
+    const existing = siteDesigns[idx];
+    const {
+      titleFa,
+      titleTr,
+      titleEn,
+      title_fa,
+      title_tr,
+      title_en,
+      category,
+      priceToman,
+      defaultShape,
+      primaryColorHex,
+      imageUrl,
+    } = req.body || {};
+
+    const updatedFa = String(titleFa ?? title_fa ?? existing.titleFa).trim() || existing.titleFa;
+    const updatedTr = String(titleTr ?? title_tr ?? existing.titleTr).trim() || updatedFa;
+    const updatedEn = String(titleEn ?? title_en ?? existing.titleEn).trim() || updatedTr;
+
+    const updated: SiteDesignItem = {
+      ...existing,
+      titleFa: updatedFa,
+      titleTr: updatedTr,
+      titleEn: updatedEn,
+      title_fa: updatedFa,
+      title_tr: updatedTr,
+      title_en: updatedEn,
+      category: category || existing.category,
+      priceToman: priceToman !== undefined ? Number(priceToman) : existing.priceToman,
+      defaultShape: defaultShape || existing.defaultShape,
+      primaryColorHex: primaryColorHex || existing.primaryColorHex,
+      imageUrl: imageUrl || existing.imageUrl,
+    };
+
+    siteDesigns[idx] = updated;
+    res.json({ design: updated });
   });
 
   app.delete('/api/site-gallery/:id', (req, res) => {
@@ -463,8 +531,18 @@ Strictly preserve the customer's exact hand skin tone, finger positions, backgro
 
   // 9. Admin: Manage Customer Showcase Gallery («نمونه تصاویر مشتریان»)
   app.post('/api/customer-gallery', (req, res) => {
-    const { customerFirstName, serviceType, serviceLabelFa, dateFa, imageUrl, commentFa } =
-      req.body || {};
+    const {
+      customerFirstName,
+      serviceType,
+      serviceLabelFa,
+      serviceLabelTr,
+      serviceLabelEn,
+      dateFa,
+      imageUrl,
+      commentFa,
+      commentTr,
+      commentEn,
+    } = req.body || {};
     if (!customerFirstName || !imageUrl) {
       res.status(400).json({ error: 'نام مشتری و تصویر الزامی است.' });
       return;
@@ -475,12 +553,14 @@ Strictly preserve the customer's exact hand skin tone, finger positions, backgro
       customerFirstName,
       serviceType: serviceType || 'vip_design',
       serviceLabelFa: serviceLabelFa || 'طراحی و ژلیش ناخن',
-      serviceLabelTr: serviceLabelFa || 'VIP Nail Art',
+      serviceLabelTr: serviceLabelTr || serviceLabelFa || 'VIP Nail Art',
+      serviceLabelEn: serviceLabelEn || serviceLabelTr || serviceLabelFa || 'VIP Nail Art',
       dateFa: dateFa || '۱۴۰۵/۰۹/۰۵',
       dateIso: new Date().toISOString().slice(0, 10),
       imageUrl,
       commentFa: commentFa || 'اجرای ظریف و ماندگار در آتلیه ناخن Tırnak Atölyesi',
-      commentTr: 'Tırnak Atölyesi özel uygulama',
+      commentTr: commentTr || 'Tırnak Atölyesi özel uygulama',
+      commentEn: commentEn || 'Bespoke nail art crafted at Tırnak Atölyesi',
     };
 
     customerGallery = [item, ...customerGallery];
@@ -511,7 +591,7 @@ Strictly preserve the customer's exact hand skin tone, finger positions, backgro
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: { middlewareMode: true, hmr: false, watch: null },
       appType: 'spa',
     });
     app.use(vite.middlewares);

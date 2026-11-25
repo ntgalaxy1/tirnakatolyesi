@@ -28,7 +28,7 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
   };
 
   return (
-    <div className="space-y-2" data-testid="before-after-slider">
+    <div className="w-full max-w-full min-w-0 space-y-2 overflow-hidden" data-testid="before-after-slider">
       <div
         ref={containerRef}
         onMouseMove={(e) => {
@@ -38,9 +38,9 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
           if (e.touches[0]) handleMove(e.touches[0].clientX);
         }}
         onClick={(e) => handleMove(e.clientX)}
-        className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden border border-[#3B132A]/15 bg-[#FAF0E6] select-none cursor-ew-resize"
+        className="relative w-full max-w-full min-w-0 aspect-[4/3] rounded-xl overflow-hidden border border-[#3B132A]/15 bg-[#FAF0E6] select-none cursor-ew-resize"
       >
-        {/* Base Layer: Before Image (Original Hand on Right) */}
+        {/* Base Layer: Before Image (Original Hand) */}
         <img
           src={beforeImage}
           alt={beforeLabel}
@@ -49,7 +49,7 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
           draggable={false}
         />
 
-        {/* Clipped Layer: After Image (AI Output on Left, covering fingernails) */}
+        {/* Clipped Layer: After Image (AI Output) */}
         <div
           className="absolute inset-0 overflow-hidden"
           style={{ clipPath: `inset(0 ${100 - sliderPosition}% 0 0)` }}
@@ -68,23 +68,23 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
           className="absolute top-0 bottom-0 w-0.5 bg-[#FFFDFB] shadow-md pointer-events-none"
           style={{ left: `${sliderPosition}%` }}
         >
-          <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-[#3B132A] text-[#FFFDFB] border-2 border-[#E5A93B] shadow-lg flex items-center justify-center">
-            <MoveHorizontal className="w-5 h-5" />
+          <div className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#3B132A] text-[#FFFDFB] border-2 border-[#E5A93B] shadow-lg flex items-center justify-center">
+            <MoveHorizontal className="w-4 h-4 sm:w-5 sm:h-5" />
           </div>
         </div>
 
-        {/* Corner Labels matching Left (AI Output) and Right (Original Hand) */}
-        <div className="absolute top-3 left-3 px-3 py-1 rounded-lg bg-[#D42663]/90 backdrop-blur-sm text-white text-xs font-medium pointer-events-none">
+        {/* Corner Labels constrained so they never overlap or overflow */}
+        <div className="absolute top-2.5 left-2.5 max-w-[44%] px-2.5 py-1 rounded-lg bg-[#D42663]/90 backdrop-blur-xs text-white text-[11px] font-medium pointer-events-none break-words">
           {afterLabel}
         </div>
-        <div className="absolute top-3 right-3 px-3 py-1 rounded-lg bg-[#3B132A]/80 backdrop-blur-sm text-[#FFFDFB] text-xs font-medium pointer-events-none">
+        <div className="absolute top-2.5 right-2.5 max-w-[44%] px-2.5 py-1 rounded-lg bg-[#3B132A]/80 backdrop-blur-xs text-[#FFFDFB] text-[11px] font-medium pointer-events-none break-words">
           {beforeLabel}
         </div>
       </div>
 
       {/* Accessible Range Input for Keyboard & Screen Reader Users */}
-      <div className="flex items-center gap-3 px-1">
-        <label htmlFor="ai-comparison-range" className="text-xs text-[#3B132A]/75 shrink-0">
+      <div className="w-full max-w-full min-w-0 flex flex-col sm:flex-row sm:items-center gap-2 px-1">
+        <label htmlFor="ai-comparison-range" className="text-xs text-[#3B132A]/75 break-words min-w-0">
           {hintText}
         </label>
         <input
@@ -94,7 +94,7 @@ export const BeforeAfterSlider: React.FC<BeforeAfterSliderProps> = ({
           max={100}
           value={sliderPosition}
           onChange={(e) => setSliderPosition(Number(e.target.value))}
-          className="w-full accent-[#D42663] cursor-pointer"
+          className="w-full max-w-full min-w-0 accent-[#D42663] cursor-pointer"
         />
       </div>
     </div>

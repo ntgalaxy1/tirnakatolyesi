@@ -1,4 +1,4 @@
-export type Language = 'fa' | 'tr';
+export type Language = 'fa' | 'tr' | 'en';
 
 export type NailCategory =
   | 'all'
@@ -26,9 +26,15 @@ export interface SiteDesignItem {
   code: string;
   titleFa: string;
   titleTr: string;
+  titleEn: string;
+  /** Database snake_case aliases for seamless PHP/MySQL & frontend interop */
+  title_fa?: string;
+  title_tr?: string;
+  title_en?: string;
   category: Exclude<NailCategory, 'all'>;
   priceToman: number;
   priceTl: number;
+  priceUsd?: number;
   durationMin: number;
   imageUrl: string;
   primaryColorHex: string;
@@ -40,15 +46,19 @@ export interface SiteDesignItem {
 export interface CustomerGalleryItem {
   id: string;
   customerFirstName: string;
+  customerNameTr?: string;
+  customerNameEn?: string;
   serviceType: ServiceType;
   serviceLabelFa: string;
   serviceLabelTr: string;
+  serviceLabelEn: string;
   dateFa: string;
   dateIso: string;
   imageUrl: string;
   designCode?: string;
   commentFa?: string;
   commentTr?: string;
+  commentEn?: string;
   reservationId?: string;
 }
 

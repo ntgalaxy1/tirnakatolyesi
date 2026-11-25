@@ -6,13 +6,15 @@
 import React, { useEffect, useState } from 'react';
 import {
   CalendarCheck,
-  Globe,
   Home,
   Images,
   LogOut,
+  Menu,
   ShieldCheck,
+  Sparkles,
   User,
   Wand2,
+  X,
 } from 'lucide-react';
 import {
   BlockedSlotRecord,
@@ -31,7 +33,7 @@ import {
   INITIAL_SITE_DESIGNS,
   INITIAL_TIME_SLOTS,
 } from './data';
-import { t } from './i18n';
+import { getDesignTitle, t } from './i18n';
 import { SiteGallerySection } from './components/SiteGallerySection';
 import { CustomerGallerySection } from './components/CustomerGallerySection';
 import { BookingAndAiStudio } from './components/BookingAndAiStudio';
@@ -42,11 +44,29 @@ import { PWAInstallButton } from './components/PWAInstallButton';
 
 type ActiveRoute = 'home' | 'my-reservations' | 'admin';
 
+const LANGUAGES: { code: Language; label: string; title: string }[] = [
+  { code: 'fa', label: 'FA', title: 'فارسی (RTL)' },
+  { code: 'tr', label: 'TR', title: 'Türkçe (LTR)' },
+  { code: 'en', label: 'EN', title: 'English (LTR)' },
+];
+
 export default function App() {
-  const [lang, setLang] = useState<Language>('fa');
+  const [lang, setLang] = useState<Language>(() => {
+    try {
+      const saved = localStorage.getItem('tirnak_lang');
+      if (saved === 'fa' || saved === 'tr' || saved === 'en') {
+        return saved;
+      }
+    } catch {
+      // Ignore storage access errors
+    }
+    return 'fa';
+  });
+
   const [activeRoute, setActiveRoute] = useState<ActiveRoute>(() =>
     window.location.pathname === '/admin' ? 'admin' : 'home'
   );
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // Persistent Customer/Admin Session
   const [currentUser, setCurrentUser] = useState<UserAccount | null>(() => {
@@ -72,10 +92,15 @@ export default function App() {
 
   const tr = t(lang);
 
-  // Sync HTML dir and lang attributes when user toggles FA (RTL) / TR (LTR)
+  // Sync HTML dir and lang attributes and persist in localStorage when user switches FA (RTL) / TR (LTR) / EN (LTR)
   useEffect(() => {
     document.documentElement.lang = lang;
     document.documentElement.dir = lang === 'fa' ? 'rtl' : 'ltr';
+    try {
+      localStorage.setItem('tirnak_lang', lang);
+    } catch {
+      // Ignore
+    }
   }, [lang]);
 
   // Support browser back/forward for /admin route
@@ -109,6 +134,7 @@ export default function App() {
 
   const navigateTo = (route: ActiveRoute, sectionId?: string) => {
     setActiveRoute(route);
+    setMobileMenuOpen(false);
     const targetPath = route === 'admin' ? '/admin' : '/';
     if (window.location.pathname !== targetPath) {
       window.history.pushState({}, '', targetPath);
@@ -147,7 +173,7 @@ export default function App() {
     }
   };
 
-  // Triggered when user clicks «تست روی دست من با هوش مصنوعی» on any Site Gallery card
+  // Triggered when user clicks «تست روی دست من» / "Elimde Dene" / "Try on My Hand" on any Site Gallery card
   const handleTryOnDesignFromGallery = (design: SiteDesignItem) => {
     setSelectedDesign(design);
     navigateTo('home', 'booking-studio');
@@ -197,26 +223,34 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#FAF0E6] text-[#3B132A] pb-16 md:pb-0">
-      {/* Top Bar Contract: Strict 1-Row, 3-Zone Header separated by gap-8 */}
-      <header className="sticky top-0 z-40 bg-[#FAF0E6]/95 backdrop-blur-md border-b border-[#3B132A]/12">
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-8 px-4 sm:px-6 lg:px-8 h-16">
-          {/* Zone 1: Brand Title (Single element lockup) */}
+    <div className="min-h-screen w-full max-w-full min-w-0 flex flex-col bg-[#FAF0E6] text-[#3B132A] pb-16 md:pb-0">
+      {/* Sticky Top Header: Responsive 1-Row Layout across 320px to Desktop */}
+      <header className="sticky top-0 z-40 w-full max-w-full bg-[#FAF0E6]/95 backdrop-blur-md border-b border-[#3B132A]/12">
+        <div className="w-full max-w-6xl mx-auto flex items-center justify-between gap-2 sm:gap-4 px-3 sm:px-6 h-16 min-w-0 overflow-hidden">
+          {/* Zone 1: Brand Title + Official Logo Lockup */}
           <a
             href="/"
             onClick={(e) => {
               e.preventDefault();
               navigateTo('home');
             }}
-            className="font-brand-serif text-xl sm:text-2xl font-bold tracking-tight text-[#3B132A] whitespace-nowrap shrink-0"
+            className="flex items-center gap-2 min-w-0 shrink-0"
           >
-            Tırnak Atölyesi
+            <img
+              src="/assets/logo.png"
+              alt="Tırnak Atölyesi"
+              className="w-8 h-8 sm:w-9 sm:h-9 rounded-lg object-contain bg-[#FFFDFB] p-0.5 border border-[#3B132A]/10 shrink-0"
+              referrerPolicy="no-referrer"
+            />
+            <span className="font-brand-serif text-base sm:text-xl font-bold tracking-tight text-[#3B132A] truncate">
+              Tırnak Atölyesi
+            </span>
           </a>
 
-          {/* Zone 2: 5 Single-Line Navigation Links */}
+          {/* Zone 2: Desktop Navigation Links */}
           <nav
-            className="hidden md:flex items-center gap-6 text-sm font-medium text-[#3B132A]/80"
-            aria-label="منوی اصلی"
+            className="hidden lg:flex items-center gap-4 xl:gap-5 text-xs xl:text-sm font-medium text-[#3B132A]/85 min-w-0"
+            aria-label={tr.navHome}
           >
             <a
               href="#site-gallery"
@@ -224,7 +258,7 @@ export default function App() {
                 e.preventDefault();
                 navigateTo('home', 'site-gallery');
               }}
-              className="hover:text-[#D42663] hover:underline underline-offset-8 transition-colors whitespace-nowrap shrink-0"
+              className="hover:text-[#D42663] hover:underline underline-offset-8 transition-colors break-words"
             >
               {tr.navSiteGallery}
             </a>
@@ -234,7 +268,7 @@ export default function App() {
                 e.preventDefault();
                 navigateTo('home', 'booking-studio');
               }}
-              className="hover:text-[#D42663] hover:underline underline-offset-8 transition-colors whitespace-nowrap shrink-0"
+              className="hover:text-[#D42663] hover:underline underline-offset-8 transition-colors break-words"
             >
               {tr.navBookingStudio}
             </a>
@@ -244,7 +278,7 @@ export default function App() {
                 e.preventDefault();
                 navigateTo('home', 'customer-gallery');
               }}
-              className="hover:text-[#D42663] hover:underline underline-offset-8 transition-colors whitespace-nowrap shrink-0"
+              className="hover:text-[#D42663] hover:underline underline-offset-8 transition-colors break-words"
             >
               {tr.navCustomerGallery}
             </a>
@@ -254,7 +288,7 @@ export default function App() {
                 e.preventDefault();
                 navigateTo('my-reservations');
               }}
-              className={`hover:text-[#D42663] hover:underline underline-offset-8 transition-colors whitespace-nowrap shrink-0 ${
+              className={`hover:text-[#D42663] hover:underline underline-offset-8 transition-colors break-words ${
                 activeRoute === 'my-reservations' ? 'text-[#D42663] font-bold' : ''
               }`}
             >
@@ -266,7 +300,7 @@ export default function App() {
                 e.preventDefault();
                 navigateTo('admin');
               }}
-              className={`hover:text-[#D42663] hover:underline underline-offset-8 transition-colors whitespace-nowrap shrink-0 ${
+              className={`hover:text-[#D42663] hover:underline underline-offset-8 transition-colors break-words ${
                 activeRoute === 'admin' ? 'text-[#D42663] font-bold' : ''
               }`}
             >
@@ -274,55 +308,170 @@ export default function App() {
             </a>
           </nav>
 
-          {/* Zone 3: 1 Primary Action Button */}
-          <div className="flex items-center shrink-0">
+          {/* Zone 3: Compact 3-Language Segmented Switcher (FA | TR | EN) + Primary CTA + Mobile Menu Button */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0 min-w-0">
+            {/* Compact Single-Row Segmented Language Switcher (FA | TR | EN) */}
+            <div
+              role="group"
+              aria-label="Language Switcher"
+              data-testid="header-language-switcher"
+              dir="ltr"
+              className="inline-flex items-center rounded-xl bg-[#FFFDFB] border border-[#3B132A]/15 p-0.5 shrink-0"
+            >
+              {LANGUAGES.map((item) => {
+                const active = lang === item.code;
+                return (
+                  <button
+                    key={item.code}
+                    type="button"
+                    title={item.title}
+                    data-testid={`lang-btn-${item.code}`}
+                    onClick={() => setLang(item.code)}
+                    className={`px-1.5 sm:px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors shrink-0 cursor-pointer ${
+                      active
+                        ? 'bg-[#3B132A] text-[#FFFDFB] shadow-xs'
+                        : 'text-[#3B132A]/70 hover:text-[#D42663]'
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
+
             <button
               type="button"
               onClick={() => navigateTo('home', 'booking-studio')}
-              className="px-4 py-2 rounded-xl bg-[#D42663] text-white text-xs sm:text-sm font-semibold hover:bg-[#B81D53] transition-colors whitespace-nowrap shrink-0 cursor-pointer shadow-sm"
+              className="hidden md:inline-flex px-3.5 py-2 rounded-xl bg-[#D42663] text-white text-xs font-semibold hover:bg-[#B81D53] transition-colors cursor-pointer shadow-xs break-words"
             >
               {tr.heroPrimaryCta}
             </button>
+
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen((prev) => !prev)}
+              aria-label="Toggle Menu"
+              className="lg:hidden p-2 rounded-xl bg-[#FFFDFB] border border-[#3B132A]/15 text-[#3B132A] hover:border-[#D42663] cursor-pointer shrink-0"
+            >
+              {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+            </button>
           </div>
         </div>
+
+        {/* Constrained Mobile Drawer Menu with 3-Language Switcher & Quick Links */}
+        {mobileMenuOpen && (
+          <div className="lg:hidden py-3 px-4 bg-[#FAF0E6]/95 border-b border-[#3B132A]/15 overflow-x-hidden">
+            <div className="w-[calc(100vw-2rem)] max-w-lg mx-auto max-h-[90vh] overflow-y-auto overflow-x-hidden rounded-2xl bg-[#FFFDFB] border border-[#3B132A]/15 p-4 space-y-3 shadow-lg">
+              <div className="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[#3B132A]/10 min-w-0">
+                <span className="text-xs font-bold text-[#3B132A]/75 break-words min-w-0">
+                  {tr.brandSubtitle}
+                </span>
+                <div
+                  dir="ltr"
+                  className="inline-flex items-center rounded-xl bg-[#FAF0E6] border border-[#3B132A]/15 p-0.5 shrink-0"
+                >
+                  {LANGUAGES.map((item) => {
+                    const active = lang === item.code;
+                    return (
+                      <button
+                        key={item.code}
+                        type="button"
+                        onClick={() => setLang(item.code)}
+                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+                          active
+                            ? 'bg-[#3B132A] text-[#FFFDFB]'
+                            : 'text-[#3B132A]/75 hover:text-[#D42663]'
+                        }`}
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-semibold w-full max-w-full min-w-0">
+                <button
+                  type="button"
+                  onClick={() => navigateTo('home', 'site-gallery')}
+                  className="w-full max-w-full min-w-0 py-2.5 px-3 rounded-xl bg-[#FAF0E6] text-start text-[#3B132A] hover:text-[#D42663] break-words"
+                >
+                  {tr.navSiteGallery}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateTo('home', 'booking-studio')}
+                  className="w-full max-w-full min-w-0 py-2.5 px-3 rounded-xl bg-[#FAF0E6] text-start text-[#D42663] font-bold break-words"
+                >
+                  {tr.navBookingStudio}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateTo('home', 'customer-gallery')}
+                  className="w-full max-w-full min-w-0 py-2.5 px-3 rounded-xl bg-[#FAF0E6] text-start text-[#3B132A] hover:text-[#D42663] break-words"
+                >
+                  {tr.navCustomerGallery}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateTo('my-reservations')}
+                  className="w-full max-w-full min-w-0 py-2.5 px-3 rounded-xl bg-[#FAF0E6] text-start text-[#3B132A] hover:text-[#D42663] break-words"
+                >
+                  {tr.navMyReservations}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => navigateTo('admin')}
+                  className="w-full max-w-full min-w-0 py-2.5 px-3 rounded-xl bg-[#FAF0E6] text-start text-[#3B132A] hover:text-[#D42663] break-words"
+                >
+                  {tr.navAdmin}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setIsAuthModalOpen(true);
+                  }}
+                  className="w-full max-w-full min-w-0 py-2.5 px-3 rounded-xl bg-[#3B132A] text-center text-[#FFFDFB] break-words"
+                >
+                  {tr.loginRegisterBtn}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1">
+      <main className="flex-1 w-full max-w-full min-w-0 overflow-hidden">
         {activeRoute === 'home' && (
           <>
-            {/* HERO SECTION with Official Attached Brand Logo, Language Toggle, Auth & PWA Install */}
-            <section className="pt-8 pb-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-              {/* Utility Bar inside Hero (Language FA/TR switcher, User Auth, PWA Install) */}
-              <div className="flex flex-wrap items-center justify-between gap-3 pb-6 mb-8 border-b border-[#3B132A]/10">
-                <div className="flex items-center gap-2 text-xs text-[#3B132A]/75">
-                  <span className="font-semibold text-[#D42663]">{tr.heroBadge}</span>
+            {/* HERO SECTION with Official Attached Brand Logo, Service Badges, Auth & PWA Install */}
+            <section className="pt-6 sm:pt-8 pb-12 sm:pb-14 w-full max-w-6xl mx-auto px-4 sm:px-6 overflow-hidden min-w-0">
+              {/* Utility Bar inside Hero (Hero Badge, User Auth, PWA Install) */}
+              <div className="flex flex-wrap items-center justify-between gap-3 pb-6 mb-8 border-b border-[#3B132A]/10 w-full max-w-full min-w-0">
+                <div className="flex items-center gap-2 text-xs text-[#3B132A]/75 min-w-0">
+                  <Sparkles className="w-3.5 h-3.5 text-[#D42663] shrink-0" />
+                  <span className="font-semibold text-[#D42663] break-words min-w-0">
+                    {tr.heroBadge}
+                  </span>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2.5">
-                  {/* Language Toggle: Persian (FA - RTL) / Turkish (TR - LTR) */}
-                  <button
-                    type="button"
-                    onClick={() => setLang((prev) => (prev === 'fa' ? 'tr' : 'fa'))}
-                    data-testid="language-toggle-btn"
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFFDFB] border border-[#3B132A]/15 text-xs font-semibold text-[#3B132A] hover:border-[#D42663] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
-                  >
-                    <Globe className="w-3.5 h-3.5 text-[#D42663]" />
-                    <span>{lang === 'fa' ? 'Türkçe (TR)' : 'فارسی (FA)'}</span>
-                  </button>
-
+                <div className="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
                   {/* Customer / Admin Auth Status */}
                   {currentUser ? (
-                    <div className="inline-flex items-center gap-2 rounded-xl bg-[#FFFDFB] border border-[#3B132A]/15 px-3 py-1.5 text-xs">
-                      <User className="w-3.5 h-3.5 text-[#D42663]" />
-                      <span className="font-bold text-[#3B132A]">{currentUser.fullName}</span>
+                    <div className="inline-flex flex-wrap items-center gap-2 rounded-xl bg-[#FFFDFB] border border-[#3B132A]/15 px-3 py-1.5 text-xs max-w-full min-w-0">
+                      <User className="w-3.5 h-3.5 text-[#D42663] shrink-0" />
+                      <span className="font-bold text-[#3B132A] break-words">
+                        {currentUser.fullName}
+                      </span>
                       <button
                         type="button"
                         onClick={handleLogout}
                         aria-label={tr.logoutBtn}
-                        className="text-[#D42663] hover:underline inline-flex items-center gap-1 cursor-pointer"
+                        className="text-[#D42663] hover:underline inline-flex items-center gap-1 cursor-pointer break-words"
                       >
-                        <LogOut className="w-3.5 h-3.5" />
+                        <LogOut className="w-3.5 h-3.5 shrink-0" />
                         <span>{tr.logoutBtn}</span>
                       </button>
                     </div>
@@ -331,10 +480,10 @@ export default function App() {
                       type="button"
                       onClick={() => setIsAuthModalOpen(true)}
                       data-testid="open-auth-modal-btn"
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFFDFB] border border-[#3B132A]/15 text-xs font-semibold text-[#3B132A] hover:border-[#D42663] transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#FFFDFB] border border-[#3B132A]/15 text-xs font-semibold text-[#3B132A] hover:border-[#D42663] transition-colors cursor-pointer max-w-full min-w-0 break-words"
                     >
-                      <User className="w-3.5 h-3.5 text-[#D42663]" />
-                      <span>{tr.loginRegisterBtn}</span>
+                      <User className="w-3.5 h-3.5 text-[#D42663] shrink-0" />
+                      <span className="break-words">{tr.loginRegisterBtn}</span>
                     </button>
                   )}
 
@@ -344,91 +493,98 @@ export default function App() {
               </div>
 
               {/* Hero 2-Column Balanced Split (`items-stretch`) */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-stretch">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-stretch w-full max-w-full min-w-0">
                 {/* Text & Editorial Column (7 cols) */}
-                <div className="lg:col-span-7 flex flex-col justify-between space-y-6">
-                  <div className="space-y-5">
+                <div className="lg:col-span-7 flex flex-col justify-between space-y-6 text-start min-w-0 max-w-full">
+                  <div className="space-y-5 min-w-0 max-w-full">
                     {/* Official Brand Logo Card */}
-                    <div className="inline-flex items-center gap-4 p-3 pr-4 rounded-2xl bg-[#FFFDFB] border border-[#3B132A]/12 shadow-sm">
+                    <div className="inline-flex flex-wrap items-center gap-3.5 p-3 pe-4 rounded-2xl bg-[#FFFDFB] border border-[#3B132A]/12 shadow-xs max-w-full min-w-0">
                       <img
                         src="/assets/logo.png"
                         alt="Tırnak Atölyesi Official Brand Logo"
-                        className="h-16 sm:h-20 w-auto object-contain rounded-xl"
+                        className="h-14 sm:h-20 w-auto object-contain rounded-xl shrink-0"
                         referrerPolicy="no-referrer"
                       />
-                      <div className="space-y-0.5">
-                        <p className="font-brand-serif text-lg sm:text-xl font-bold text-[#3B132A]">
+                      <div className="space-y-0.5 text-start min-w-0">
+                        <p className="font-brand-serif text-lg sm:text-xl font-bold text-[#3B132A] break-words">
                           Tırnak Atölyesi
                         </p>
-                        <p className="text-xs font-medium text-[#7B2869] tracking-wide">
+                        <p className="text-xs font-medium text-[#7B2869] tracking-wide break-words">
                           {tr.brandSubtitle}
                         </p>
                       </div>
                     </div>
 
-                    <h1
-                      className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-[#3B132A] leading-tight"
-                      style={{ textWrap: 'balance' }}
-                    >
+                    <h1 className="text-2xl sm:text-4xl lg:text-5xl font-extrabold text-[#3B132A] leading-tight break-words">
                       {tr.heroTitle}
                     </h1>
 
-                    <p className="text-base sm:text-lg text-[#3B132A]/80 leading-relaxed max-w-2xl">
+                    <p className="text-sm sm:text-lg text-[#3B132A]/80 leading-relaxed max-w-2xl break-words">
                       {tr.heroDescription}
                     </p>
+
+                    {/* Trilingual Hero Service Badges */}
+                    <div className="flex flex-wrap items-center gap-2 pt-1 min-w-0 max-w-full">
+                      {tr.heroServiceBadges.map((badge) => (
+                        <button
+                          key={badge.id}
+                          type="button"
+                          onClick={() => navigateTo('home', 'booking-studio')}
+                          className="px-3 py-1.5 rounded-xl bg-[#FFFDFB] border border-[#3B132A]/12 text-xs font-bold text-[#3B132A] hover:border-[#D42663] hover:text-[#D42663] transition-colors cursor-pointer break-words min-w-0"
+                        >
+                          ✦ {badge.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
                   {/* Hero CTAs & Brand Color Swatch Ribbon */}
-                  <div className="space-y-6 pt-2">
-                    <div className="flex flex-wrap items-center gap-4">
+                  <div className="space-y-6 pt-2 min-w-0 max-w-full">
+                    <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-3 sm:gap-4 w-full max-w-full min-w-0">
                       <button
                         type="button"
                         onClick={() => navigateTo('home', 'booking-studio')}
-                        className="py-3.5 px-6 rounded-2xl bg-[#3B132A] text-[#FFFDFB] text-sm sm:text-base font-bold hover:bg-[#D42663] transition-colors inline-flex items-center gap-2.5 shadow-md cursor-pointer whitespace-nowrap"
+                        className="w-full sm:w-auto max-w-full min-w-0 py-3.5 px-5 sm:px-6 rounded-2xl bg-[#3B132A] text-[#FFFDFB] text-sm sm:text-base font-bold hover:bg-[#D42663] transition-colors inline-flex items-center justify-center gap-2.5 shadow-md cursor-pointer break-words"
                       >
-                        <Wand2 className="w-5 h-5 text-[#E5A93B]" />
-                        <span>{tr.heroPrimaryCta}</span>
+                        <Wand2 className="w-5 h-5 text-[#E5A93B] shrink-0" />
+                        <span className="break-words">{tr.heroPrimaryCta}</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={() => navigateTo('home', 'site-gallery')}
-                        className="py-3.5 px-6 rounded-2xl bg-[#FFFDFB] border border-[#3B132A]/20 text-[#3B132A] text-sm sm:text-base font-semibold hover:border-[#D42663] transition-colors cursor-pointer whitespace-nowrap"
+                        className="w-full sm:w-auto max-w-full min-w-0 py-3.5 px-5 sm:px-6 rounded-2xl bg-[#FFFDFB] border border-[#3B132A]/20 text-[#3B132A] text-sm sm:text-base font-semibold hover:border-[#D42663] transition-colors cursor-pointer text-center break-words"
                       >
                         {tr.heroSecondaryCta}
                       </button>
                     </div>
 
                     {/* Extracted 5-Nail Crown Color Palette Strip */}
-                    <div className="flex items-center gap-3 text-xs text-[#3B132A]/75">
-                      <span>
-                        {lang === 'fa'
-                          ? 'پالت رنگی رسمی آتلیه:'
-                          : 'Atölye İmza Renk Paleti:'}
-                      </span>
-                      <div className="flex items-center gap-1.5">
+                    <div className="flex flex-wrap items-center gap-2.5 text-xs text-[#3B132A]/75 min-w-0">
+                      <span className="break-words">{tr.nailColorLabel}</span>
+                      <div className="flex flex-wrap items-center gap-1.5">
                         <span
-                          className="w-5 h-5 rounded-full border border-white shadow-sm"
+                          className="w-5 h-5 rounded-full border border-white shadow-xs shrink-0"
                           style={{ backgroundColor: '#E5A93B' }}
                           title="Marigold Gold"
                         />
                         <span
-                          className="w-5 h-5 rounded-full border border-white shadow-sm"
+                          className="w-5 h-5 rounded-full border border-white shadow-xs shrink-0"
                           style={{ backgroundColor: '#F3769B' }}
                           title="Blush Pink"
                         />
                         <span
-                          className="w-5 h-5 rounded-full border border-white shadow-sm"
+                          className="w-5 h-5 rounded-full border border-white shadow-xs shrink-0"
                           style={{ backgroundColor: '#D42663' }}
                           title="Raspberry Magenta"
                         />
                         <span
-                          className="w-5 h-5 rounded-full border border-white shadow-sm"
+                          className="w-5 h-5 rounded-full border border-white shadow-xs shrink-0"
                           style={{ backgroundColor: '#7B2869' }}
                           title="Mulberry Purple"
                         />
                         <span
-                          className="w-5 h-5 rounded-full border border-white shadow-sm"
+                          className="w-5 h-5 rounded-full border border-white shadow-xs shrink-0"
                           style={{ backgroundColor: '#F7AD93' }}
                           title="Warm Peach"
                         />
@@ -438,29 +594,31 @@ export default function App() {
                 </div>
 
                 {/* Hero Media Showcase Column (5 cols) */}
-                <div className="lg:col-span-5 flex flex-col">
-                  <div className="relative flex-1 rounded-3xl overflow-hidden border border-[#3B132A]/15 bg-[#FFFDFB] shadow-md min-h-[320px]">
+                <div className="lg:col-span-5 flex flex-col min-w-0 max-w-full">
+                  <div className="relative flex-1 w-full max-w-full min-w-0 rounded-3xl overflow-hidden border border-[#3B132A]/15 bg-[#FFFDFB] shadow-md aspect-square sm:min-h-[320px]">
                     <img
                       src={selectedDesign.imageUrl}
-                      alt={lang === 'fa' ? selectedDesign.titleFa : selectedDesign.titleTr}
+                      alt={getDesignTitle(selectedDesign, lang)}
                       className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
                     />
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#3B132A]/90 via-[#3B132A]/50 to-transparent p-6 text-[#FFFDFB] space-y-2">
-                      <div className="flex items-center justify-between text-xs text-[#F7AD93]">
-                        <span className="font-mono font-bold">{selectedDesign.code}</span>
-                        <span>tirnakatolyesi.ir • AI Try-On Ready</span>
+                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#3B132A]/90 via-[#3B132A]/50 to-transparent p-4 sm:p-6 text-[#FFFDFB] space-y-1.5 text-start">
+                      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#F7AD93]">
+                        <span className="font-mono font-bold break-words">
+                          {selectedDesign.code}
+                        </span>
+                        <span className="break-words">{tr.heroPreviewBadge}</span>
                       </div>
-                      <p className="text-base sm:text-lg font-bold">
-                        {lang === 'fa' ? selectedDesign.titleFa : selectedDesign.titleTr}
+                      <p className="text-sm sm:text-lg font-bold break-words">
+                        {getDesignTitle(selectedDesign, lang)}
                       </p>
                       <button
                         type="button"
                         onClick={() => navigateTo('home', 'booking-studio')}
-                        className="mt-1 inline-flex items-center gap-2 text-xs font-bold text-[#E5A93B] hover:underline cursor-pointer"
+                        className="mt-1 inline-flex items-center gap-2 text-xs font-bold text-[#E5A93B] hover:underline cursor-pointer break-words"
                       >
-                        <Wand2 className="w-3.5 h-3.5" />
-                        <span>{tr.tryOnWithAiBtn}</span>
+                        <Wand2 className="w-3.5 h-3.5 shrink-0" />
+                        <span className="break-words">{tr.tryOnWithAiBtn}</span>
                       </button>
                     </div>
                   </div>
@@ -468,28 +626,28 @@ export default function App() {
               </div>
 
               {/* Full-Width 5-Service Highlights Row Below Hero Split */}
-              <div className="mt-12 pt-10 border-t border-[#3B132A]/10">
-                <h2 className="text-lg font-bold text-[#3B132A] mb-5">
+              <div className="mt-12 pt-10 border-t border-[#3B132A]/10 text-start w-full max-w-full min-w-0">
+                <h2 className="text-lg font-bold text-[#3B132A] mb-5 break-words">
                   {tr.servicesTitle}
                 </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 w-full max-w-full min-w-0">
                   {tr.serviceHighlights.map((srv, idx) => (
                     <div
                       key={srv.id}
-                      className="rounded-2xl bg-[#FFFDFB] border border-[#3B132A]/12 p-4 flex flex-col justify-between space-y-2"
+                      className="w-full max-w-full min-w-0 rounded-2xl bg-[#FFFDFB] border border-[#3B132A]/12 p-4 flex flex-col justify-between space-y-2 text-start overflow-hidden"
                     >
-                      <div>
+                      <div className="min-w-0">
                         <span className="font-mono text-xs font-bold text-[#D42663]">
                           0{idx + 1}.
                         </span>
-                        <h3 className="text-sm font-bold text-[#3B132A] mt-1">
+                        <h3 className="text-sm font-bold text-[#3B132A] mt-1 break-words">
                           {srv.title}
                         </h3>
-                        <p className="text-xs text-[#3B132A]/70 mt-1 leading-relaxed">
+                        <p className="text-xs text-[#3B132A]/70 mt-1 leading-relaxed break-words">
                           {srv.desc}
                         </p>
                       </div>
-                      <p className="text-xs font-bold text-[#7B2869] pt-2 border-t border-[#3B132A]/10 tabular-nums">
+                      <p className="text-xs font-bold text-[#7B2869] pt-2 border-t border-[#3B132A]/10 tabular-nums break-words">
                         {srv.price}
                       </p>
                     </div>
@@ -498,8 +656,8 @@ export default function App() {
               </div>
             </section>
 
-            {/* GALLERY SECTION 1: «تصاویر نمونه خود سایت» (Official Salon & AI Nail Designs) */}
-            <div className="border-t border-[#3B132A]/10">
+            {/* GALLERY SECTION 1: «تصاویر نمونه خود سایت» / "Salon Tasarımları" / "Official Salon Designs" */}
+            <div className="border-t border-[#3B132A]/10 w-full max-w-full min-w-0">
               <SiteGallerySection
                 lang={lang}
                 designs={siteDesigns}
@@ -507,8 +665,8 @@ export default function App() {
               />
             </div>
 
-            {/* APPOINTMENT BOOKING & DUAL IMAGE UPLOAD STUDIO */}
-            <div className="border-t border-[#3B132A]/10 bg-[#FAF0E6]">
+            {/* 3-STEP APPOINTMENT BOOKING WIZARD & DUAL IMAGE UPLOAD STUDIO */}
+            <div className="border-t border-[#3B132A]/10 bg-[#FAF0E6] w-full max-w-full min-w-0">
               <BookingAndAiStudio
                 lang={lang}
                 currentUser={currentUser}
@@ -525,8 +683,8 @@ export default function App() {
               />
             </div>
 
-            {/* GALLERY SECTION 2: «نمونه تصاویر مشتریان» (Dedicated Customer Showcase Gallery) */}
-            <div className="border-t border-[#3B132A]/10">
+            {/* GALLERY SECTION 2: «نمونه تصاویر مشتریان» / "Müşteri Galerisi" / "Customer Showcase" */}
+            <div className="border-t border-[#3B132A]/10 w-full max-w-full min-w-0">
               <CustomerGallerySection lang={lang} items={customerGallery} />
             </div>
           </>
@@ -551,6 +709,11 @@ export default function App() {
             onPublishToCustomerGallery={handlePublishToCustomerGallery}
             siteDesigns={siteDesigns}
             onAddSiteDesign={(d) => setSiteDesigns((prev) => [d, ...prev])}
+            onUpdateSiteDesign={(updated) =>
+              setSiteDesigns((prev) =>
+                prev.map((d) => (d.id === updated.id ? updated : d))
+              )
+            }
             onDeleteSiteDesign={(id) =>
               setSiteDesigns((prev) => prev.filter((d) => d.id !== id))
             }
@@ -569,34 +732,34 @@ export default function App() {
       </main>
 
       {/* Deep Aubergine Brand Footer */}
-      <footer className="bg-[#3B132A] text-[#FFFDFB] py-12 px-4 sm:px-6 lg:px-8 mt-16">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
-          <div className="flex items-center gap-4">
+      <footer className="bg-[#3B132A] text-[#FFFDFB] py-12 mt-16 w-full max-w-full min-w-0 overflow-hidden">
+        <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-8 min-w-0">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 text-start min-w-0 max-w-full">
             <img
               src="/assets/logo.png"
               alt="Tırnak Atölyesi Official Logo"
-              className="w-16 h-16 rounded-2xl object-contain bg-[#FAF0E6] p-1.5"
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl object-contain bg-[#FAF0E6] p-1.5 shrink-0"
               referrerPolicy="no-referrer"
             />
-            <div>
-              <p className="font-brand-serif text-xl font-bold text-[#FFFDFB]">
+            <div className="min-w-0">
+              <p className="font-brand-serif text-xl font-bold text-[#FFFDFB] break-words">
                 Tırnak Atölyesi
               </p>
-              <p className="text-xs text-[#F7AD93] mt-0.5">{tr.brandSubtitle}</p>
-              <p className="text-xs text-[#FFFDFB]/65 mt-1">
-                https://tirnakatolyesi.ir • آتلیه تخصصی طراحی ناخن و تست هوشمند با هوش مصنوعی
+              <p className="text-xs text-[#F7AD93] mt-0.5 break-words">{tr.brandSubtitle}</p>
+              <p className="text-xs text-[#FFFDFB]/65 mt-1 break-words">
+                https://tirnakatolyesi.ir • {tr.footerTagline}
               </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4 text-xs text-[#FFFDFB]/80">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs text-[#FFFDFB]/80 min-w-0 max-w-full">
             <a
               href="#site-gallery"
               onClick={(e) => {
                 e.preventDefault();
                 navigateTo('home', 'site-gallery');
               }}
-              className="hover:text-[#E5A93B] transition-colors"
+              className="hover:text-[#E5A93B] transition-colors break-words"
             >
               {tr.navSiteGallery}
             </a>
@@ -607,7 +770,7 @@ export default function App() {
                 e.preventDefault();
                 navigateTo('home', 'booking-studio');
               }}
-              className="hover:text-[#E5A93B] transition-colors"
+              className="hover:text-[#E5A93B] transition-colors break-words"
             >
               {tr.navBookingStudio}
             </a>
@@ -618,7 +781,7 @@ export default function App() {
                 e.preventDefault();
                 navigateTo('home', 'customer-gallery');
               }}
-              className="hover:text-[#E5A93B] transition-colors"
+              className="hover:text-[#E5A93B] transition-colors break-words"
             >
               {tr.navCustomerGallery}
             </a>
@@ -629,7 +792,7 @@ export default function App() {
                 e.preventDefault();
                 navigateTo('admin');
               }}
-              className="hover:text-[#E5A93B] transition-colors"
+              className="hover:text-[#E5A93B] transition-colors break-words"
             >
               {tr.navAdmin} (/admin)
             </a>
@@ -637,60 +800,60 @@ export default function App() {
         </div>
       </footer>
 
-      {/* Mobile Ergonomic Bottom Tab Bar (Visible only on mobile viewports, <= 15% sticky height cap) */}
+      {/* Mobile Ergonomic Bottom Tab Bar (Visible only on mobile viewports, strictly constrained) */}
       <nav
-        aria-label="ناوبری موبایل"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#FFFDFB]/95 backdrop-blur-md border-t border-[#3B132A]/15 grid grid-cols-5 items-center h-14 px-1"
+        aria-label={tr.navHome}
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 w-full max-w-full bg-[#FFFDFB]/95 backdrop-blur-md border-t border-[#3B132A]/15 grid grid-cols-5 items-center h-14 px-1 overflow-hidden"
       >
         <button
           type="button"
           onClick={() => navigateTo('home')}
-          className={`flex flex-col items-center justify-center py-1 text-[10px] font-semibold cursor-pointer ${
+          className={`flex flex-col items-center justify-center py-1 text-[10px] font-semibold cursor-pointer min-w-0 ${
             activeRoute === 'home' ? 'text-[#D42663]' : 'text-[#3B132A]/70'
           }`}
         >
-          <Home className="w-4 h-4" />
-          <span className="mt-0.5 truncate">{tr.navHome}</span>
+          <Home className="w-4 h-4 shrink-0" />
+          <span className="mt-0.5 truncate max-w-full px-0.5">{tr.navHome}</span>
         </button>
 
         <button
           type="button"
           onClick={() => navigateTo('home', 'site-gallery')}
-          className="flex flex-col items-center justify-center py-1 text-[10px] font-semibold text-[#3B132A]/70 cursor-pointer"
+          className="flex flex-col items-center justify-center py-1 text-[10px] font-semibold text-[#3B132A]/70 cursor-pointer min-w-0"
         >
-          <Images className="w-4 h-4" />
-          <span className="mt-0.5 truncate">{lang === 'fa' ? 'گالری سایت' : 'Tasarımlar'}</span>
+          <Images className="w-4 h-4 shrink-0" />
+          <span className="mt-0.5 truncate max-w-full px-0.5">{tr.navSiteGallery}</span>
         </button>
 
         <button
           type="button"
           onClick={() => navigateTo('home', 'booking-studio')}
-          className="flex flex-col items-center justify-center py-1 text-[10px] font-bold text-[#D42663] cursor-pointer"
+          className="flex flex-col items-center justify-center py-1 text-[10px] font-bold text-[#D42663] cursor-pointer min-w-0"
         >
-          <Wand2 className="w-4 h-4" />
-          <span className="mt-0.5 truncate">{lang === 'fa' ? 'تست AI و رزرو' : 'AI & Randevu'}</span>
+          <Wand2 className="w-4 h-4 shrink-0" />
+          <span className="mt-0.5 truncate max-w-full px-0.5">{tr.tryOnWithAiBtn}</span>
         </button>
 
         <button
           type="button"
           onClick={() => navigateTo('my-reservations')}
-          className={`flex flex-col items-center justify-center py-1 text-[10px] font-semibold cursor-pointer ${
+          className={`flex flex-col items-center justify-center py-1 text-[10px] font-semibold cursor-pointer min-w-0 ${
             activeRoute === 'my-reservations' ? 'text-[#D42663]' : 'text-[#3B132A]/70'
           }`}
         >
-          <CalendarCheck className="w-4 h-4" />
-          <span className="mt-0.5 truncate">{lang === 'fa' ? 'رزروهای من' : 'Randevular'}</span>
+          <CalendarCheck className="w-4 h-4 shrink-0" />
+          <span className="mt-0.5 truncate max-w-full px-0.5">{tr.navMyReservations}</span>
         </button>
 
         <button
           type="button"
           onClick={() => navigateTo('admin')}
-          className={`flex flex-col items-center justify-center py-1 text-[10px] font-semibold cursor-pointer ${
+          className={`flex flex-col items-center justify-center py-1 text-[10px] font-semibold cursor-pointer min-w-0 ${
             activeRoute === 'admin' ? 'text-[#D42663]' : 'text-[#3B132A]/70'
           }`}
         >
-          <ShieldCheck className="w-4 h-4" />
-          <span className="mt-0.5 truncate">{lang === 'fa' ? 'مدیریت' : 'Admin'}</span>
+          <ShieldCheck className="w-4 h-4 shrink-0" />
+          <span className="mt-0.5 truncate max-w-full px-0.5">{tr.navAdmin}</span>
         </button>
       </nav>
 

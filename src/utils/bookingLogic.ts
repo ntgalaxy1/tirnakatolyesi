@@ -111,9 +111,12 @@ export function generateTrackingCode(seedIndex: number): string {
   return `TA-${num}`;
 }
 
-export function formatToman(amount: number, lang: 'fa' | 'tr'): string {
+export function formatToman(amount: number, lang: 'fa' | 'tr' | 'en'): string {
   if (lang === 'fa') {
     return `${amount.toLocaleString('fa-IR')} تومان`;
+  }
+  if (lang === 'tr') {
+    return `${amount.toLocaleString('tr-TR')} Toman`;
   }
   return `${amount.toLocaleString('en-US')} Toman`;
 }
