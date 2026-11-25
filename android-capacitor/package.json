@@ -1,0 +1,20 @@
+{
+  "name": "tirnak-atolyesi-android",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Tırnak Atölyesi Android Packaging for Cafe Bazaar & Google Play (ir.tirnakatolyesi.app)",
+  "scripts": {
+    "sync": "npx cap sync android",
+    "open": "npx cap open android",
+    "generate-icons": "npx @capacitor/assets generate --iconBackgroundColor '#FAF0E6' --splashBackgroundColor '#FAF0E6' --android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/splash-screen": "^6.0.2"
+  },
+  "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "^6.1.2"
+  }
+}

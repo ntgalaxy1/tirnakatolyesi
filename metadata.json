@@ -1,0 +1,6 @@
+{
+  "name": "Tırnak Atölyesi — رزرو نوبت و تست هوشمند ناخن با هوش مصنوعی",
+  "description": "پلتفرم تخصصی طراحی ناخن، مانیکور، پدیکور و تست مجازی طرح ناخن روی دست با هوش مصنوعی (tirnakatolyesi.ir)",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

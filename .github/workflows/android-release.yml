@@ -1,0 +1,100 @@
+name: Build Signed Android APK (Cafe Bazaar) & AAB (Google Play)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-android-release:
+    name: Build Tırnak Atölyesi APK & AAB (ir.tirnakatolyesi.app)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Setup Java JDK 21 for Android Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Web Dependencies & Build Production dist/
+        run: |
+          npm ci
+          npm run build
+
+      - name: Initialize & Sync Capacitor Android Project (ir.tirnakatolyesi.app)
+        working-directory: ./android-capacitor
+        run: |
+          npm install
+          mkdir -p resources
+          cp ../public/assets/logo.png resources/icon.png
+          cp ../public/assets/logo.png resources/splash.png
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+          npx @capacitor/assets generate --iconBackgroundColor '#FAF0E6' --splashBackgroundColor '#FAF0E6' --android || true
+          npx cap sync android
+
+      - name: Decode Release Keystore from GitHub Secrets (or Generate Fallback Key)
+        working-directory: ./android-capacitor/android/app
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 || secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD || 'TirnakAtolyesi2026!' }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || secrets.ANDROID_KEY_ALIAS || 'tirnakatolyesi' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || secrets.ANDROID_KEY_PASSWORD || 'TirnakAtolyesi2026!' }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "$KEYSTORE_BASE64" | base64 --decode > release-keystore.jks
+          else
+            keytool -genkeypair -v \
+              -keystore release-keystore.jks \
+              -alias "$KEY_ALIAS" \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass "$KEYSTORE_PASSWORD" \
+              -keypass "$KEY_PASSWORD" \
+              -dname "CN=Tirnak Atolyesi, OU=Mobile, O=TirnakAtolyesi.ir, L=Tehran, S=Tehran, C=IR"
+          fi
+
+      - name: Build Signed Release APK (Cafe Bazaar / کافهبازار) & Signed AAB (Google Play)
+        working-directory: ./android-capacitor/android
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD || secrets.ANDROID_KEYSTORE_PASSWORD || 'TirnakAtolyesi2026!' }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS || secrets.ANDROID_KEY_ALIAS || 'tirnakatolyesi' }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD || secrets.ANDROID_KEY_PASSWORD || 'TirnakAtolyesi2026!' }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=$PWD/app/release-keystore.jks \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file=$PWD/app/release-keystore.jks \
+            -Pandroid.injected.signing.store.password="$KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$KEY_PASSWORD"
+
+      - name: Upload Signed APK for Cafe Bazaar (کافهبازار) & Myket
+        uses: actions/upload-artifact@v4
+        with:
+          name: tirnak-atolyesi-cafebazaar-release-apk
+          path: android-capacitor/android/app/build/outputs/apk/release/*.apk
+
+      - name: Upload Signed AAB for Google Play Console
+        uses: actions/upload-artifact@v4
+        with:
+          name: tirnak-atolyesi-googleplay-release-aab
+          path: android-capacitor/android/app/build/outputs/bundle/release/*.aab
